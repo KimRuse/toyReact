@@ -28,10 +28,6 @@ function createDom(fiber) {
     ? document.createTextNode('')
     : document.createElement(fiber.type)
 
-    fiber.props.children.forEach(child => {
-    render(child, dom)
-  })
-
   const isProperty = key => key !== 'children'
   Object.keys(fiber.props)
     .filter(isProperty)
@@ -42,16 +38,36 @@ function createDom(fiber) {
   return dom
 }
 
+function commitRoot() {
+  commitWork(wipRoot.child)
+  currentRoot = wipRoot
+  wipRoot = null
+}
+
+function commitWork(fiber) {
+  if (!fiber) return
+
+  const domParent = fiber.parent.dom
+  domParent.appendChild(fiber.dom)
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
+}
+
 function render(element, container) {
-  nextUnitOfWork = {
+  wipRoot = {
     dom: container,
     props: {
       children: [element]
-    }
+    },
+    alternate: currentRoot,
   }
+
+  nextUnitOfWork = wipRoot
 }
 
 let nextUnitOfWork = null
+let currentRoot = null
+let wipRoot = null
 
 function workLoop(deadline) {
   let shouldYield = false
@@ -59,6 +75,10 @@ function workLoop(deadline) {
   while(nextUnitOfWork && !shouldYield) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
     shouldYield = deadline.timeRemaining() < 1
+  }
+
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot()
   }
 
   requestIdleCallback(workLoop)
@@ -71,27 +91,8 @@ function performUnitOfWork(fiber) {
     fiber.dom = createDom(fiber)
   }
 
-  if(fiber.parent) {
-    fiber.parent.dom.appendChild(fiber.dom)
-  }
-
   const elements = fiber.props.children
-  let prevSibling
-  elements.forEach((element, index) => {
-    const newFiber = {
-      dom: null,
-      type: element.type,
-      props: element.props,
-      parent: fiber,
-    }
-
-    if (index === 0) {
-      fiber.child = newFiber
-    } else {
-      prevSibling.sibling = newFiber
-    }
-    prevSibling = newFiber
-  })
+  reconcileChildren(fiber, elements)
 
   if (fiber.child) {
     return fiber.child
@@ -103,6 +104,25 @@ function performUnitOfWork(fiber) {
     }
     nextFiber = nextFiber.parent
   }
+}
+
+function reconcileChildren(wipFiber, elements) {
+  let prevSibling
+  elements.forEach((element, index) => {
+    const newFiber = {
+      dom: null,
+      type: element.type,
+      props: element.props,
+      parent: wipFiber,
+    }
+
+    if (index === 0) {
+      wipFiber.child = newFiber
+    } else {
+      prevSibling.sibling = newFiber
+    }
+    prevSibling = newFiber
+  })
 }
 
 const React = {
