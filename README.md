@@ -1,6 +1,6 @@
 # toyReact
-打造自己的玩具React，用于学习
-
+打造自己的玩具React，用于学习 参考下面资料
+https://pomb.us/build-your-own-react/
 # 项目初始化
 配置环境，支持热编译
 
@@ -11,7 +11,22 @@
 - render方法用于递归element创建dom并给dom赋值props,通过document.appendChild链接各节点
 
 # Fiber
+<<<<<<< HEAD
 由于我们的递归执行element来构建dom和添加dom属性，这存在一个问题
 执行无法被打断(这是JS运行的内在机制)， 我们需要将工作划分成一个个增量单元
 nextUnitOfWork,通过performUnitOfWork执行单个增量并返回下个工作单元
 Fiber, element对象映射了一颗链表树的Fiber树
+=======
+将element对象所表示的树结构
+-> 转换成由指针链接的链表树结构
+这样可以将不可终止的递归调用element对象的遍历行为
+-> 转换为可以拆解的fiber工作单元所连接的fiber树
+的调用。
+给出第一个rootFiber作为第一个nextUnitOfWork
+通过performUnitOfWork方法调用nextUnitOfWork,并返回下一个需要执行的nextUnitOfWork,我们可以设置条件来决定是否继续执行performUnitOfWork
+
+# commit
+之前我们的构建存在问题，游览器是可以随时中止执行的在整颗树执行完时，这时用户将看到的是一颗不完整的UI树，这时我们需要将插入dom部分的代码剔除
+我们会在整颗fiber树都构建好了再提交到commitRoot方法，帮我们构建dom树
+同时设置currentRoot用于更新时跟wipRoot比较
+>>>>>>> 2f9f85d30891ab834b54c31e4643a02a62cacc32

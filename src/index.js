@@ -27,6 +27,7 @@ function createDom(fiber) {
     fiber.type === 'TEXT_ELEMENT'
     ? document.createTextNode('')
     : document.createElement(fiber.type)
+<<<<<<< HEAD
 
   updateDom(dom, {}, fiber.props)
 
@@ -157,6 +158,75 @@ function performUnitOfWork(fiber) {
   }
 
   // TODO return next unit of work
+=======
+
+  const isProperty = key => key !== 'children'
+  Object.keys(fiber.props)
+    .filter(isProperty)
+    .forEach(
+      name => dom[name] = fiber.props[name]
+    )
+  
+  return dom
+}
+
+function commitRoot() {
+  commitWork(wipRoot.child)
+  currentRoot = wipRoot
+  wipRoot = null
+}
+
+function commitWork(fiber) {
+  if (!fiber) return
+
+  const domParent = fiber.parent.dom
+  domParent.appendChild(fiber.dom)
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
+}
+
+function render(element, container) {
+  wipRoot = {
+    dom: container,
+    props: {
+      children: [element]
+    },
+    alternate: currentRoot,
+  }
+
+  nextUnitOfWork = wipRoot
+}
+
+let nextUnitOfWork = null
+let currentRoot = null
+let wipRoot = null
+
+function workLoop(deadline) {
+  let shouldYield = false
+
+  while(nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
+    shouldYield = deadline.timeRemaining() < 1
+  }
+
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot()
+  }
+
+  requestIdleCallback(workLoop)
+}
+
+requestIdleCallback(workLoop)
+
+function performUnitOfWork(fiber) {
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber)
+  }
+
+  const elements = fiber.props.children
+  reconcileChildren(fiber, elements)
+
+>>>>>>> 2f9f85d30891ab834b54c31e4643a02a62cacc32
   if (fiber.child) {
     return fiber.child
   }
@@ -169,6 +239,7 @@ function performUnitOfWork(fiber) {
   }
 }
 
+<<<<<<< HEAD
 let wipFiber = null
 let hookIndex = null
 function updateFunctionComponent(fiber) {
@@ -261,6 +332,16 @@ function renconcileChlidren(wipFiber, elements) {
 
     if (oldFiber) {
       oldFiber = oldFiber.sibling
+=======
+function reconcileChildren(wipFiber, elements) {
+  let prevSibling
+  elements.forEach((element, index) => {
+    const newFiber = {
+      dom: null,
+      type: element.type,
+      props: element.props,
+      parent: wipFiber,
+>>>>>>> 2f9f85d30891ab834b54c31e4643a02a62cacc32
     }
 
     if (index === 0) {
@@ -268,10 +349,15 @@ function renconcileChlidren(wipFiber, elements) {
     } else {
       prevSibling.sibling = newFiber
     }
+<<<<<<< HEAD
 
     prevSibling = newFiber
     index++
   }
+=======
+    prevSibling = newFiber
+  })
+>>>>>>> 2f9f85d30891ab834b54c31e4643a02a62cacc32
 }
 
 const React = {
